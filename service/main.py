@@ -29,10 +29,20 @@ stdout_handler.setFormatter(logging.Formatter(format_string))
 logger.addHandler(stdout_handler)
 logger.setLevel(logging.INFO)
 
+def find_key_string(dictionary):
+    string = ""
+    for i, key in enumerate(dictionary.keys()):
+        try:
+            string +="\n" + key + ": " + "{" + find_key_string(dictionary[key]) + "}"  
+        except AttributeError:
+            string 
+            string += "\n" + key + ": " + dictionary[key]
+    return string
+
 def individual_emails(entity, pipe, reason, mail_header):
     if reason == 'dead-letters':
-        msg = Message("SESAM " + mail_header, sender = "dont-reply@sesam.io", recipients = [get_env('MAIL_RECEIVER')])
-        msg.body = "The pipe %s failed at %s for entity %s \n \n Original error message: \n %s \n Entity body: \n { \n     country_id: %s \n     email: %s \n     ensure_unique_custom_tag_ids_by_category: %s \n     external_unique_id: %s \n     name: %s \n     office_id: %s \n     role: %s \n     telephone: %s \n \n For more information, please contact support@sesam.io or your direct Sesam contact.}" %(entity['pipe'], entity['event_time'], entity['_id'], entity['original_error_message'], entity['entity']['payload']['user']['country_id'], entity['entity']['payload']['user']['email'], entity['entity']['payload']['user']['ensure_unique_custom_tag_ids_by_category'][list(entity['entity']['payload']['user']['ensure_unique_custom_tag_ids_by_category'].keys())[0]], entity['entity']['payload']['user']['external_unique_id'], entity['entity']['payload']['user']['name'], entity['entity']['payload']['user']['office_id'], entity['entity']['payload']['user']['role'], entity['entity']['payload']['user']['telephone'])
+        payload = find_key_string(entity['entity']['payload'])
+        msg.body = "The pipe %s failed at %s for entity %s \n\nOriginal error message: \n\n%s \nEntity body: %s \n\nFor more information, please contact support@sesam.io or your direct Sesam contact." %(entity['pipe'], entity['event_time'], entity['_id'], entity['original_error_message'], payload)
     elif reason == 'currentdepid':
         msg = Message("SESAM" + mail_header, sender = "dont-reply@sesam.io", recipients = [get_env('MAIL_RECEIVER')])
         msg.body = "AD-user %s is a manager but has no CurrentDepartmentID \n For more information, please contact support@sesam.io or your direct Sesam contact." % entity["employeeID"][0]
